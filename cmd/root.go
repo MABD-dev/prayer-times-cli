@@ -38,7 +38,6 @@ var rootCmd = &cobra.Command{
 		}
 		ui.RenderPrayerTime(*prayerTime)
 
-		fmt.Println("Testing shit")
 		return nil
 	},
 }

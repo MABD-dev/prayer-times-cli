@@ -1,18 +1,34 @@
 package ui
 
 import (
-	"fmt"
+	"os"
 
+	"github.com/aquasecurity/table"
+	"github.com/fatih/color"
 	"github.com/mabd-dev/prayer-times-cli/internal/models"
 )
 
+var (
+	prayerTimeHeaderrFgColor = color.New(color.FgHiGreen)
+)
+
 func RenderPrayerTime(dayPrayerTimes models.DayPrayerTimes) {
-	fmt.Println("***********")
-	fmt.Printf("%v\n", dayPrayerTimes.Gregorian)
-	fmt.Printf("Fajr=%v\n", dayPrayerTimes.PrayerTimes.Fajr)
-	fmt.Printf("Dhuhr=%v\n", dayPrayerTimes.PrayerTimes.Dhuhr)
-	fmt.Printf("Asr=%v\n", dayPrayerTimes.PrayerTimes.Asr)
-	fmt.Printf("Maghrib=%v\n", dayPrayerTimes.PrayerTimes.Maghrib)
-	fmt.Printf("Isha=%v\n", dayPrayerTimes.PrayerTimes.Isha)
-	fmt.Println("***********")
+	table := table.New(os.Stdout)
+
+	table.SetHeaders(
+		prayerTimeHeaderrFgColor.Sprint("Fajr"),
+		prayerTimeHeaderrFgColor.Sprint("Dhuhr"),
+		prayerTimeHeaderrFgColor.Sprint("Asr"),
+		prayerTimeHeaderrFgColor.Sprint("Maghrib"),
+		prayerTimeHeaderrFgColor.Sprint("Isha"),
+	)
+	times := dayPrayerTimes.PrayerTimes
+	table.AddRow(
+		times.Fajr,
+		times.Dhuhr,
+		times.Asr,
+		times.Maghrib,
+		times.Isha,
+	)
+	table.Render()
 }
