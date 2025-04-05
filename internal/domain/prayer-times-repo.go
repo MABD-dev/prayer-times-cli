@@ -29,15 +29,15 @@ func GetDayPrayerTimeFor(time time.Time) *models.DayPrayerTimes {
 func GetNextPrayerTime(
 	requestedTime time.Time,
 	dayPrayerTimes models.DayPrayerTimes,
-) *time.Time {
-	nextPrayerTime := getNextPrayerTime(requestedTime, requestedTime, dayPrayerTimes.PrayerTimes)
+) (*time.Time, string) {
+	nextPrayerTime, name := getNextPrayerTime(requestedTime, requestedTime, dayPrayerTimes.PrayerTimes)
 	if nextPrayerTime == nil {
 		nextDay := requestedTime.Add(24 * time.Hour)
 		nextDayPrayerTimes := GetDayPrayerTimeFor(nextDay)
 		if nextDayPrayerTimes == nil {
-			return nil
+			return nil, ""
 		}
-		nextPrayerTime = getNextPrayerTime(requestedTime, nextDay, dayPrayerTimes.PrayerTimes)
+		nextPrayerTime, name = getNextPrayerTime(requestedTime, nextDay, dayPrayerTimes.PrayerTimes)
 	}
-	return nextPrayerTime
+	return nextPrayerTime, name
 }

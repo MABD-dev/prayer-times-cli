@@ -109,8 +109,15 @@ func getNextPrayerTime(
 	requestedTime time.Time,
 	prayerDay time.Time,
 	prayerTimes models.PrayerTimes,
-) *time.Time {
+) (*time.Time, string) {
 
+	sortedPrayerNames := []string{
+		"Fajr",
+		"Dhuhu",
+		"Asr",
+		"Maghrib",
+		"Isha",
+	}
 	sortedPrayerTimes := []string{
 		prayerTimes.Fajr,
 		prayerTimes.Dhuhr,
@@ -119,16 +126,16 @@ func getNextPrayerTime(
 		prayerTimes.Isha,
 	}
 
-	for _, prayerTime := range sortedPrayerTimes {
+	for i, prayerTime := range sortedPrayerTimes {
 		t, err := parseTime(prayerDay, prayerTime)
 		if err != nil {
-			return nil
+			return nil, ""
 		}
 
 		if t.After(requestedTime) || t.Equal(requestedTime) {
-			return &t
+			return &t, sortedPrayerNames[i]
 		}
 	}
 
-	return nil
+	return nil, ""
 }

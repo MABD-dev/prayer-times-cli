@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/mabd-dev/prayer-times-cli/internal/domain"
 	"github.com/mabd-dev/prayer-times-cli/internal/ui"
 	"github.com/spf13/cobra"
@@ -39,12 +40,15 @@ var rootCmd = &cobra.Command{
 			fmt.Println("could not find prayer time")
 			return nil
 		}
-		fmt.Printf("date=%v\n", prayerTime.Gregorian)
 		ui.RenderPrayerTime(*prayerTime)
 
-		nextPrayerTime := domain.GetNextPrayerTime(requestedDate, *prayerTime)
+		nextPrayerTime, name := domain.GetNextPrayerTime(requestedDate, *prayerTime)
 		if nextPrayerTime != nil {
-			fmt.Printf("next prayer time=%v\n", nextPrayerTime)
+			green := color.New(color.FgHiGreen)
+			coloredPrayerName := green.Sprint(name)
+			coloredHours := green.Sprint(nextPrayerTime.Hour())
+			coloredMinutes := green.Sprint(nextPrayerTime.Minute())
+			fmt.Printf("%v hours, %v minutes till %v\n", coloredHours, coloredMinutes, coloredPrayerName)
 		}
 
 		return nil
