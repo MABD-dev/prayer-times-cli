@@ -4,6 +4,7 @@ Copyright © 2025 MABD-dev <mabd.universe@gmail.com>
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -24,19 +25,37 @@ var rootCmd = &cobra.Command{
 		}
 		month, err := cmd.Flags().GetInt("month")
 		if err != nil {
-			panic(err)
+			return err
 		}
 		day, err := cmd.Flags().GetInt("day")
 		if err != nil {
-			panic(err)
+			return err
 		}
 
-		prayerTime := domain.GetDayPrayerTimeFor(year, month, day)
-		if prayerTime == nil {
-			fmt.Println("could not find prayer time")
-			return nil
+		now := time.Now()
+		requestedDate := time.Date(year, time.Month(month), day, now.Hour(), now.Minute(), 0, 0, now.Location())
+
+		dayPrayer := domain.GetDayPrayerTimeFor(requestedDate)
+		if dayPrayer == nil {
+			return errors.New("Failed to get day prayers!")
 		}
-		ui.RenderPrayerTime(*prayerTime)
+
+		isToday := domain.SameDay(now, requestedDate)
+		if isToday {
+			ui.RenderDate(dayPrayer.Date)
+		}
+		ui.RenderPrayerTime((*dayPrayer).Prayers)
+
+		if isToday {
+			previousPrayer, nextPrayer := domain.GetNextAndPreviousPrayerTimes(*dayPrayer)
+			fmt.Println(previousPrayer)
+
+			reminaingToNextPrayer := domain.GetTimeRemainingTo(nextPrayer.Time)
+			if reminaingToNextPrayer == nil {
+				return errors.New("Failed to get time remaining to next prayer")
+			}
+			ui.RenderTimeRemaining(*nextPrayer, *reminaingToNextPrayer)
+		}
 
 		return nil
 	},

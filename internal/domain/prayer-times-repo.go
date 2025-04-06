@@ -1,100 +1,84 @@
 package domain
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-
-	"github.com/mabd-dev/prayer-times-cli/internal/models"
+	"time"
 )
 
 // GetDayPrayerTimeFor get caches data locally or fetch new data from remote then save locally.
 // Then search data for specific @year @month and @day. If found return prayer times
-func GetDayPrayerTimeFor(
-	year int,
-	month int,
-	day int,
-) *models.DayPrayerTimes {
-	dateStr := formatDate(year, month, day)
-	localYearFilename := fmt.Sprintf("%v.json", year)
+func GetDayPrayerTimeFor(time time.Time) *DayPrayers {
+	dateStr := formatDate(time)
+	localYearFilename := fmt.Sprintf("%v.json", time.Year())
 
 	data := loadFromLocal(localYearFilename)
 	if data == nil {
-		fmt.Println("Fetching data from internet...")
-		res, err := fetchPrayingTimes(year)
+		res, err := fetchAndSavePrayerTimes(time.Year(), localYearFilename)
 		if err != nil {
 			fmt.Println("Failed to fetch data from internet")
 			return nil
 		}
-		Save(localYearFilename, *res)
 		data = res
 	}
 
-	return getPrayerTimes(*data, dateStr)
+	prayerTimes := getPrayerTimes(*data, dateStr)
+	return mapToDayPrayer(*prayerTimes)
 }
 
-func loadFromLocal(filename string) *models.PrayerTimesResponse {
-	var data models.PrayerTimesResponse
-	err := Load(filename, &data)
-	if err != nil {
-		return nil
+// getNextAndPreviousPrayerTimes
+//
+// @returns
+//   - (previous prayer, next prayer)
+func GetNextAndPreviousPrayerTimes(dayPrayers DayPrayers) (*Prayer, *Prayer) {
+	day := time.Now()
+
+	yesterdayDate := day.Add(-24 * time.Hour)
+	yesterdayPrayers := GetDayPrayerTimeFor(yesterdayDate)
+	if yesterdayPrayers == nil {
+		return nil, nil //errors.New("Failed to get yesterday's prayers")
 	}
-	return &data
-}
+	fmt.Println(yesterdayPrayers)
 
-func fetchPrayingTimes(year int) (*models.PrayerTimesResponse, error) {
-	baseUrl := fmt.Sprintf("https://ibad-al-rahman.github.io/prayer-times/v1/year/days/%v.json", year)
-	fmt.Println(baseUrl)
-
-	resp, err := http.Get(baseUrl)
-	if err != nil {
-		return nil, err
+	tomorrowDate := day.Add(24 * time.Hour)
+	tomorrowPrayers := GetDayPrayerTimeFor(tomorrowDate)
+	if tomorrowPrayers == nil {
+		return nil, nil //errors.New("Failed to get tomorrow's prayers")
 	}
-	defer resp.Body.Close()
+	fmt.Println(tomorrowPrayers)
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("response not ok!!%v\n", resp.StatusCode)
-	}
+	combinedPrayerTimes := []Prayer{}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
+	// take only fajr prayer from next day. best case it would be previous prayer
+	combinedPrayerTimes = append(combinedPrayerTimes, (*yesterdayPrayers).Prayers[len((*yesterdayPrayers).Prayers)-1])
 
-	var response models.PrayerTimesResponse
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		return nil, err
-	}
+	combinedPrayerTimes = append(combinedPrayerTimes, dayPrayers.Prayers...)
 
-	return &response, nil
-}
+	// take only fajr prayer from next day. best case it would be next prayer
+	combinedPrayerTimes = append(combinedPrayerTimes, (*tomorrowPrayers).Prayers[0])
 
-func formatDate(
-	year int,
-	month int,
-	day int,
-) string {
-	dayStr := fmt.Sprint(day)
-	if day < 9 {
-		dayStr = fmt.Sprintf("0%v", day)
-	}
-	monthStr := fmt.Sprint(month)
-	if month < 9 {
-		monthStr = fmt.Sprintf("0%v", month)
-	}
-	return fmt.Sprintf("%v/%v/%v", dayStr, monthStr, year)
-}
-
-func getPrayerTimes(
-	data models.PrayerTimesResponse,
-	dateStr string,
-) *models.DayPrayerTimes {
-	for _, dayPrayerTime := range data.Year {
-		if dayPrayerTime.Gregorian == dateStr {
-			return &dayPrayerTime
+	nextPrayerIndex := -1
+	for i, p := range combinedPrayerTimes {
+		if p.Time.After(day) || p.Time.Equal(day) {
+			nextPrayerIndex = i
+			break
 		}
 	}
-	return nil
+
+	return &combinedPrayerTimes[nextPrayerIndex-1], &combinedPrayerTimes[nextPrayerIndex]
+}
+
+// GetTimeRemainingTo
+//
+// @Returns
+//   - hours remaining
+//   - minutes remaining
+func GetTimeRemainingTo(nextPrayerTime time.Time) *time.Duration {
+	now := time.Now()
+	if now.After(nextPrayerTime) {
+		return nil
+	}
+
+	duration := nextPrayerTime.Sub(now)
+	return &duration
+
 }
