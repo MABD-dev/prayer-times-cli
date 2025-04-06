@@ -15,6 +15,7 @@ var (
 	prayerTimeHeaderrFgColor = color.New(color.FgHiGreen)
 	remainingTimeFgColor     = color.New(color.FgHiGreen)
 	timeProgressFgColor      = color.New(color.FgHiGreen)
+	timeProgressBgColor      = color.New(color.BgHiGreen)
 )
 
 func RenderPrayerTime(prayers []domain.Prayer) {
@@ -63,7 +64,7 @@ func RenderTimeProgress(
 	sb.WriteString(previousPrayer.Name)
 	sb.WriteString(" ")
 	for range coloredSymbols {
-		sb.WriteString(timeProgressFgColor.Sprint(symbol))
+		sb.WriteString(timeProgressBgColor.Sprint(" "))
 	}
 	for range whiteSymbols {
 		sb.WriteString(symbol)
