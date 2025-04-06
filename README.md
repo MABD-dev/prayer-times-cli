@@ -54,17 +54,9 @@ By default year, month and day are today's dates, but you can override any of th
 
 
 ## Roadmap
-Features coming up 
-- [x] Display day prayer times
-- [x] Display time left till next prayer 
-- [ ] Update root command. Given a day, generate a struct that has: day prayer times, next prayer time and time till next prayer in a struct, ready to be displayed on ui
-- [ ] Create interface for domain/prayer-times-repo
-- [ ] Create interface for domain/file-storage and inject it in prayer-times-repo
-- [ ] Test, Test, and mooore unit testing
-- [ ] Display day events if exists
-- [ ] REPL Support
+Check [issues](https://github.com/MABD-dev/prayer-times-cli/issues)
 
-<br/><br/><br/><br/><br/>
+<br/><br/><br/>
 
 # Special Thanks
 
