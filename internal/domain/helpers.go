@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/mabd-dev/prayer-times-cli/internal/models"
@@ -78,61 +77,13 @@ func formatDate(time time.Time) string {
 func getPrayerTimes(
 	data models.PrayerTimesResponse,
 	dateStr string,
-) *models.DayPrayerTimes {
+) *models.DayPrayers {
 	for _, dayPrayerTime := range data.Year {
 		if dayPrayerTime.Gregorian == dateStr {
 			return &dayPrayerTime
 		}
 	}
 	return nil
-}
-
-func getSortedPrayerTimes(day time.Time, prayerTimes models.PrayerTimes) ([]Prayer, error) {
-	result := []Prayer{}
-
-	sortedPrayerNames := []string{
-		"Fajr",
-		"Dhuhr",
-		"Asr",
-		"Maghrib",
-		"Isha",
-	}
-	sortedPrayerTimes := []string{
-		prayerTimes.Fajr,
-		prayerTimes.Dhuhr,
-		prayerTimes.Asr,
-		prayerTimes.Maghrib,
-		prayerTimes.Isha,
-	}
-	for i, p := range sortedPrayerTimes {
-		t, err := parseTime(day, p)
-		if err != nil {
-			return []Prayer{}, err
-		}
-		prayer := Prayer{
-			Name: sortedPrayerNames[i],
-			Time: t,
-		}
-		result = append(result, prayer)
-	}
-
-	return result, nil
-}
-
-// ParseTime takes a time string like this "12:05 pm" and convert it to @time.Time
-// or returns error if failed to parse
-func parseTime(
-	requestedTime time.Time,
-	tStr string,
-) (time.Time, error) {
-	layout := "3:04 pm"
-	t, err := time.Parse(layout, strings.ToLower(strings.TrimSpace(tStr)))
-	if err != nil {
-		return time.Time{}, err
-	}
-	// Attach today's date to the parsed time
-	time := time.Date(requestedTime.Year(), requestedTime.Month(), requestedTime.Day(), t.Hour(), t.Minute(), 59, 0, requestedTime.Location())
-	return time, nil
 }
 
 func SameDay(t time.Time, otherT time.Time) bool {
