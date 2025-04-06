@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"time"
 
@@ -48,13 +47,15 @@ var rootCmd = &cobra.Command{
 
 		if isToday {
 			previousPrayer, nextPrayer := domain.GetNextAndPreviousPrayerTimes(*dayPrayer)
-			fmt.Println(previousPrayer)
 
 			reminaingToNextPrayer := domain.GetTimeRemainingTo(nextPrayer.Time)
 			if reminaingToNextPrayer == nil {
 				return errors.New("Failed to get time remaining to next prayer")
 			}
 			ui.RenderTimeRemaining(*nextPrayer, *reminaingToNextPrayer)
+
+			timeProgressPercent := domain.TimeProgressPercent(previousPrayer.Time, nextPrayer.Time)
+			ui.RenderTimeProgress(*previousPrayer, *nextPrayer, timeProgressPercent)
 		}
 
 		return nil

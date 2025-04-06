@@ -37,14 +37,12 @@ func GetNextAndPreviousPrayerTimes(dayPrayers DayPrayers) (*Prayer, *Prayer) {
 	if yesterdayPrayers == nil {
 		return nil, nil //errors.New("Failed to get yesterday's prayers")
 	}
-	fmt.Println(yesterdayPrayers)
 
 	tomorrowDate := day.Add(24 * time.Hour)
 	tomorrowPrayers := GetDayPrayerTimeFor(tomorrowDate)
 	if tomorrowPrayers == nil {
 		return nil, nil //errors.New("Failed to get tomorrow's prayers")
 	}
-	fmt.Println(tomorrowPrayers)
 
 	combinedPrayerTimes := []Prayer{}
 
@@ -81,4 +79,26 @@ func GetTimeRemainingTo(nextPrayerTime time.Time) *time.Duration {
 	duration := nextPrayerTime.Sub(now)
 	return &duration
 
+}
+
+func TimeProgressPercent(
+	previousPrayerTime time.Time,
+	nextPrayerTime time.Time,
+) float64 {
+	now := time.Now()
+	totalDuration := nextPrayerTime.Sub(previousPrayerTime).Seconds()
+	passedDuration := nextPrayerTime.Sub(now).Seconds()
+
+	if passedDuration <= 0 {
+		return 100.0
+	}
+
+	percent := 100 - (passedDuration/totalDuration)*100.0
+	if percent < 0 {
+		return 0.0
+	}
+	if percent > 100.0 {
+		return 100.0
+	}
+	return percent
 }
