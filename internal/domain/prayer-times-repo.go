@@ -41,3 +41,20 @@ func GetNextPrayerTime(
 	}
 	return nextPrayerTime, name
 }
+
+func GetPreviousPrayerName(currPrayerName string) (string, error) {
+	switch {
+	case currPrayerName == "Fajr":
+		return "Isha", nil
+	case currPrayerName == "Dhuhr":
+		return "Fajr", nil
+	case currPrayerName == "Asr":
+		return "Dhuhr", nil
+	case currPrayerName == "Maghrib":
+		return "Asr", nil
+	case currPrayerName == "Isha":
+		return "Maghrib", nil
+	default:
+		return "", nil
+	}
+}

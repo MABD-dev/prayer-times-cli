@@ -113,7 +113,7 @@ func getNextPrayerTime(
 
 	sortedPrayerNames := []string{
 		"Fajr",
-		"Dhuhu",
+		"Dhuhr",
 		"Asr",
 		"Maghrib",
 		"Isha",

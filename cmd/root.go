@@ -42,14 +42,21 @@ var rootCmd = &cobra.Command{
 		}
 		ui.RenderPrayerTime(*prayerTime)
 
-		nextPrayerTime, name := domain.GetNextPrayerTime(requestedDate, *prayerTime)
-		if nextPrayerTime != nil {
-			green := color.New(color.FgHiGreen)
-			coloredPrayerName := green.Sprint(name)
-			coloredHours := green.Sprint(nextPrayerTime.Hour())
-			coloredMinutes := green.Sprint(nextPrayerTime.Minute())
-			fmt.Printf("%v hours, %v minutes till %v\n", coloredHours, coloredMinutes, coloredPrayerName)
+		nextPrayerTime, prayerName := domain.GetNextPrayerTime(requestedDate, *prayerTime)
+		if nextPrayerTime == nil {
+			return fmt.Errorf("Could not next prayer time!")
 		}
+
+		timeToNextPrayer := nextPrayerTime.Sub(now)
+
+		green := color.New(color.FgHiGreen)
+		coloredPrayerName := green.Sprint(prayerName)
+		coloredHours := green.Sprint(int(timeToNextPrayer.Hours()))
+		coloredMinutes := green.Sprint(int(timeToNextPrayer.Minutes()) % 60)
+		fmt.Printf("%v hours, %v minutes till %v\n", coloredHours, coloredMinutes, coloredPrayerName)
+
+		// previousPrayerName, err := domain.GetPreviousPrayerName(prayerName)
+		// fmt.Printf("%v to %v\n", previousPrayerName, prayerName)
 
 		return nil
 	},
