@@ -58,7 +58,6 @@ Check [issues](https://github.com/MABD-dev/prayer-times-cli/issues)
 
 <br/><br/><br/>
 
-# Special Thanks
+# Special Thanks To
 
-This project was possible because of this [ibad-al-rahman/prayer-times](https://github.com/ibad-al-rahman/prayer-times) repo. That provided an easy way to generate and fetch prayer times in simple api request
-
+[ibad-al-rahman/prayer-times](https://github.com/ibad-al-rahman/prayer-times)
