@@ -3,13 +3,11 @@ package domain
 import (
 	"fmt"
 	"time"
-
-	"github.com/mabd-dev/prayer-times-cli/internal/models"
 )
 
 // GetDayPrayerTimeFor get caches data locally or fetch new data from remote then save locally.
 // Then search data for specific @year @month and @day. If found return prayer times
-func GetDayPrayerTimeFor(time time.Time) *models.DayPrayerTimes {
+func GetDayPrayerTimeFor(time time.Time) *DayPrayers {
 	dateStr := formatDate(time)
 	localYearFilename := fmt.Sprintf("%v.json", time.Year())
 
@@ -23,38 +21,64 @@ func GetDayPrayerTimeFor(time time.Time) *models.DayPrayerTimes {
 		data = res
 	}
 
-	return getPrayerTimes(*data, dateStr)
+	prayerTimes := getPrayerTimes(*data, dateStr)
+	return mapToDayPrayer(*prayerTimes)
 }
 
-func GetNextPrayerTime(
-	requestedTime time.Time,
-	dayPrayerTimes models.DayPrayerTimes,
-) (*time.Time, string) {
-	nextPrayerTime, name := getNextPrayerTime(requestedTime, requestedTime, dayPrayerTimes.PrayerTimes)
-	if nextPrayerTime == nil {
-		nextDay := requestedTime.Add(24 * time.Hour)
-		nextDayPrayerTimes := GetDayPrayerTimeFor(nextDay)
-		if nextDayPrayerTimes == nil {
-			return nil, ""
+// getNextAndPreviousPrayerTimes
+//
+// @returns
+//   - (previous prayer, next prayer)
+func GetNextAndPreviousPrayerTimes(dayPrayers DayPrayers) (*Prayer, *Prayer) {
+	day := time.Now()
+
+	yesterdayDate := day.Add(-24 * time.Hour)
+	yesterdayPrayers := GetDayPrayerTimeFor(yesterdayDate)
+	if yesterdayPrayers == nil {
+		return nil, nil //errors.New("Failed to get yesterday's prayers")
+	}
+	fmt.Println(yesterdayPrayers)
+
+	tomorrowDate := day.Add(24 * time.Hour)
+	tomorrowPrayers := GetDayPrayerTimeFor(tomorrowDate)
+	if tomorrowPrayers == nil {
+		return nil, nil //errors.New("Failed to get tomorrow's prayers")
+	}
+	fmt.Println(tomorrowPrayers)
+
+	combinedPrayerTimes := []Prayer{}
+
+	// take only fajr prayer from next day. best case it would be previous prayer
+	combinedPrayerTimes = append(combinedPrayerTimes, (*yesterdayPrayers).Prayers[len((*yesterdayPrayers).Prayers)-1])
+
+	combinedPrayerTimes = append(combinedPrayerTimes, dayPrayers.Prayers...)
+
+	// take only fajr prayer from next day. best case it would be next prayer
+	combinedPrayerTimes = append(combinedPrayerTimes, (*tomorrowPrayers).Prayers[0])
+
+	nextPrayerIndex := -1
+	for i, p := range combinedPrayerTimes {
+		if p.Time.After(day) || p.Time.Equal(day) {
+			nextPrayerIndex = i
+			break
 		}
-		nextPrayerTime, name = getNextPrayerTime(requestedTime, nextDay, dayPrayerTimes.PrayerTimes)
 	}
-	return nextPrayerTime, name
+
+	return &combinedPrayerTimes[nextPrayerIndex-1], &combinedPrayerTimes[nextPrayerIndex]
 }
 
-func GetPreviousPrayerName(currPrayerName string) (string, error) {
-	switch {
-	case currPrayerName == "Fajr":
-		return "Isha", nil
-	case currPrayerName == "Dhuhr":
-		return "Fajr", nil
-	case currPrayerName == "Asr":
-		return "Dhuhr", nil
-	case currPrayerName == "Maghrib":
-		return "Asr", nil
-	case currPrayerName == "Isha":
-		return "Maghrib", nil
-	default:
-		return "", nil
+// GetTimeRemainingTo
+//
+// @Returns
+//   - hours remaining
+//   - minutes remaining
+func GetTimeRemainingTo(nextPrayerTime time.Time) *time.Duration {
+	now := time.Now()
+	if now.After(nextPrayerTime) {
+		return nil
 	}
+
+	duration := nextPrayerTime.Sub(now)
+	return &duration
+
 }

@@ -4,11 +4,11 @@ Copyright © 2025 MABD-dev <mabd.universe@gmail.com>
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/mabd-dev/prayer-times-cli/internal/domain"
 	"github.com/mabd-dev/prayer-times-cli/internal/ui"
 	"github.com/spf13/cobra"
@@ -35,28 +35,27 @@ var rootCmd = &cobra.Command{
 		now := time.Now()
 		requestedDate := time.Date(year, time.Month(month), day, now.Hour(), now.Minute(), 0, 0, now.Location())
 
-		prayerTime := domain.GetDayPrayerTimeFor(requestedDate)
-		if prayerTime == nil {
-			fmt.Println("could not find prayer time")
-			return nil
-		}
-		ui.RenderPrayerTime(*prayerTime)
-
-		nextPrayerTime, prayerName := domain.GetNextPrayerTime(requestedDate, *prayerTime)
-		if nextPrayerTime == nil {
-			return fmt.Errorf("Could not next prayer time!")
+		dayPrayer := domain.GetDayPrayerTimeFor(requestedDate)
+		if dayPrayer == nil {
+			return errors.New("Failed to get day prayers!")
 		}
 
-		timeToNextPrayer := nextPrayerTime.Sub(now)
+		isToday := domain.SameDay(now, requestedDate)
+		if isToday {
+			ui.RenderDate(dayPrayer.Date)
+		}
+		ui.RenderPrayerTime((*dayPrayer).Prayers)
 
-		green := color.New(color.FgHiGreen)
-		coloredPrayerName := green.Sprint(prayerName)
-		coloredHours := green.Sprint(int(timeToNextPrayer.Hours()))
-		coloredMinutes := green.Sprint(int(timeToNextPrayer.Minutes()) % 60)
-		fmt.Printf("%v hours, %v minutes till %v\n", coloredHours, coloredMinutes, coloredPrayerName)
+		if isToday {
+			previousPrayer, nextPrayer := domain.GetNextAndPreviousPrayerTimes(*dayPrayer)
+			fmt.Println(previousPrayer)
 
-		// previousPrayerName, err := domain.GetPreviousPrayerName(prayerName)
-		// fmt.Printf("%v to %v\n", previousPrayerName, prayerName)
+			reminaingToNextPrayer := domain.GetTimeRemainingTo(nextPrayer.Time)
+			if reminaingToNextPrayer == nil {
+				return errors.New("Failed to get time remaining to next prayer")
+			}
+			ui.RenderTimeRemaining(*nextPrayer, *reminaingToNextPrayer)
+		}
 
 		return nil
 	},

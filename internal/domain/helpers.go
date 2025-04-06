@@ -87,6 +87,38 @@ func getPrayerTimes(
 	return nil
 }
 
+func getSortedPrayerTimes(day time.Time, prayerTimes models.PrayerTimes) ([]Prayer, error) {
+	result := []Prayer{}
+
+	sortedPrayerNames := []string{
+		"Fajr",
+		"Dhuhr",
+		"Asr",
+		"Maghrib",
+		"Isha",
+	}
+	sortedPrayerTimes := []string{
+		prayerTimes.Fajr,
+		prayerTimes.Dhuhr,
+		prayerTimes.Asr,
+		prayerTimes.Maghrib,
+		prayerTimes.Isha,
+	}
+	for i, p := range sortedPrayerTimes {
+		t, err := parseTime(day, p)
+		if err != nil {
+			return []Prayer{}, err
+		}
+		prayer := Prayer{
+			Name: sortedPrayerNames[i],
+			Time: t,
+		}
+		result = append(result, prayer)
+	}
+
+	return result, nil
+}
+
 // ParseTime takes a time string like this "12:05 pm" and convert it to @time.Time
 // or returns error if failed to parse
 func parseTime(
@@ -103,39 +135,6 @@ func parseTime(
 	return time, nil
 }
 
-// getNextPrayerTime for now assuming their is a next prayer in the day
-// TODO: write better docs
-func getNextPrayerTime(
-	requestedTime time.Time,
-	prayerDay time.Time,
-	prayerTimes models.PrayerTimes,
-) (*time.Time, string) {
-
-	sortedPrayerNames := []string{
-		"Fajr",
-		"Dhuhr",
-		"Asr",
-		"Maghrib",
-		"Isha",
-	}
-	sortedPrayerTimes := []string{
-		prayerTimes.Fajr,
-		prayerTimes.Dhuhr,
-		prayerTimes.Asr,
-		prayerTimes.Maghrib,
-		prayerTimes.Isha,
-	}
-
-	for i, prayerTime := range sortedPrayerTimes {
-		t, err := parseTime(prayerDay, prayerTime)
-		if err != nil {
-			return nil, ""
-		}
-
-		if t.After(requestedTime) || t.Equal(requestedTime) {
-			return &t, sortedPrayerNames[i]
-		}
-	}
-
-	return nil, ""
+func SameDay(t time.Time, otherT time.Time) bool {
+	return t.Year() == otherT.Year() && t.Month() == otherT.Month() && t.Day() == otherT.Day()
 }
