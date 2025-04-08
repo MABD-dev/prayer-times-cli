@@ -64,7 +64,7 @@ func formatDate(time time.Time) string {
 	year := time.Year()
 
 	dayStr := fmt.Sprint(day)
-	if day < 9 {
+	if day <= 9 {
 		dayStr = fmt.Sprintf("0%v", day)
 	}
 	monthStr := fmt.Sprint(month)
@@ -78,9 +78,9 @@ func getPrayerTimes(
 	data models.PrayerTimesResponse,
 	dateStr string,
 ) *models.DailyPrayersDto {
-	for _, dayPrayerTime := range data.Year {
-		if dayPrayerTime.Gregorian == dateStr {
-			return &dayPrayerTime
+	for _, dayPrayer := range data.Year {
+		if dayPrayer.Gregorian == dateStr {
+			return &dayPrayer
 		}
 	}
 	return nil

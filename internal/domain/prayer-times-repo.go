@@ -22,6 +22,9 @@ func GetDayPrayerTimeFor(time time.Time) *DayPrayers {
 	}
 
 	prayerTimes := getPrayerTimes(*data, dateStr)
+	if prayerTimes == nil {
+		return nil
+	}
 	return mapToDayPrayer(*prayerTimes)
 }
 

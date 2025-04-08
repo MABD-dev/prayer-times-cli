@@ -47,6 +47,9 @@ var rootCmd = &cobra.Command{
 
 		if isToday {
 			previousPrayer, nextPrayer := domain.GetNextAndPreviousPrayerTimes(*dayPrayer)
+			if previousPrayer == nil || nextPrayer == nil {
+				return errors.New("Could not get previous or next prayer")
+			}
 
 			reminaingToNextPrayer := domain.GetTimeRemainingTo(nextPrayer.Time)
 			if reminaingToNextPrayer == nil {
