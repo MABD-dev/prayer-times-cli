@@ -13,8 +13,6 @@ type DayPrayers struct {
 	Prayers []Prayer
 }
 
-// To be used in ui
-
 type DailyPrayerSchedule struct {
 	Date    time.Time
 	Prayers []Prayer
