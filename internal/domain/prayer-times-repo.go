@@ -1,9 +1,22 @@
 package domain
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
+
+func GetDailyPrayerSchedule(date time.Time) (DailyPrayerSchedule, error) {
+	dayPrayers := GetDayPrayerTimeFor(date)
+	if dayPrayers == nil {
+		return DailyPrayerSchedule{}, errors.New("Failed to get day prayer")
+	}
+
+	return DailyPrayerSchedule{
+		Date:    dayPrayers.Date,
+		Prayers: dayPrayers.Prayers,
+	}, nil
+}
 
 // GetDayPrayerTimeFor get caches data locally or fetch new data from remote then save locally.
 // Then search data for specific @year @month and @day. If found return prayer times

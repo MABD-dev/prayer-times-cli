@@ -18,6 +18,11 @@ var (
 	timeProgressBgColor      = color.New(color.BgHiGreen)
 )
 
+func RenderDailyPrayerSchedule(dailyPrayerSchedule domain.DailyPrayerSchedule) {
+	RenderDate(dailyPrayerSchedule.Date)
+	RenderPrayerTime(dailyPrayerSchedule.Prayers)
+}
+
 func RenderPrayerTime(prayers []domain.Prayer) {
 	table := table.New(os.Stdout)
 
