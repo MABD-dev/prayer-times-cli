@@ -77,7 +77,7 @@ func formatDate(time time.Time) string {
 func getPrayerTimes(
 	data models.PrayerTimesResponse,
 	dateStr string,
-) *models.DayPrayers {
+) *models.DailyPrayersDto {
 	for _, dayPrayerTime := range data.Year {
 		if dayPrayerTime.Gregorian == dateStr {
 			return &dayPrayerTime

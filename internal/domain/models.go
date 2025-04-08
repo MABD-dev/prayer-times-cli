@@ -12,3 +12,13 @@ type DayPrayers struct {
 	Date    time.Time
 	Prayers []Prayer
 }
+
+// struct that represents
+//   - today's date
+//   - today's prayer times
+//
+// struct that represents
+//   - today's date
+//   - today's prayer times
+//   - time left till next prayer
+//   - progress bar from previous to next prayer

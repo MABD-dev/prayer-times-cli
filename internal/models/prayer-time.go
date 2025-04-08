@@ -1,6 +1,6 @@
 package models
 
-type Prayers struct {
+type PrayerTimesDto struct {
 	Fajr    string `json:"fajr"`
 	Dhuhr   string `json:"dhuhr"`
 	Asr     string `json:"asr"`
@@ -13,22 +13,22 @@ type Event struct {
 	Ar string `json:"ar"`
 }
 
-type DayPrayers struct {
-	ID        int     `json:"id"`
-	WeekID    int     `json:"weekId"`
-	Gregorian string  `json:"gregorian"`
-	Hijri     string  `json:"hijri"`
-	Prayers   Prayers `json:"prayerTimes"`
-	Event     Event   `json:"event"`
+type DailyPrayersDto struct {
+	ID        int            `json:"id"`
+	WeekID    int            `json:"weekId"`
+	Gregorian string         `json:"gregorian"`
+	Hijri     string         `json:"hijri"`
+	Prayers   PrayerTimesDto `json:"prayerTimes"`
+	Event     Event          `json:"event"`
 }
 
 type PrayerTimesResponse struct {
-	Year []DayPrayers `json:"year"`
-	Sha1 string       `json:"sha1"`
+	Year []DailyPrayersDto `json:"year"`
+	Sha1 string            `json:"sha1"`
 }
 
 // SortedPrayers return list of prayer times in ascending order
-func (p Prayers) SortedPrayers() []string {
+func (p PrayerTimesDto) SortedPrayers() []string {
 	return []string{
 		p.Fajr,
 		p.Dhuhr,
