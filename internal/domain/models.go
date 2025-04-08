@@ -22,7 +22,8 @@ type DailyPrayerSchedule struct {
 
 type ActivePrayerTracking struct {
 	DailyPrayerSchedule
-	NextPrayer    string
-	TimeRemaining time.Duration
-	Progress      float64
+	PreviousPrayer string
+	NextPrayer     string
+	TimeRemaining  time.Duration
+	Progress       float64
 }

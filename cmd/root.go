@@ -4,7 +4,6 @@ Copyright © 2025 MABD-dev <mabd.universe@gmail.com>
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -36,7 +35,12 @@ var rootCmd = &cobra.Command{
 
 		isToday := domain.SameDay(now, requestedDate)
 		if isToday {
-			fmt.Println("Calling some other function")
+			activePrayerTracking, err := domain.GetActivePrayerTracking(requestedDate)
+			if err != nil {
+				return err
+			}
+			ui.RenderActivePrayerTracking(activePrayerTracking)
+
 		} else {
 			dailyPrayerSchedule, err := domain.GetDailyPrayerSchedule(requestedDate)
 			if err != nil {
@@ -44,24 +48,6 @@ var rootCmd = &cobra.Command{
 			}
 			ui.RenderDailyPrayerSchedule(dailyPrayerSchedule)
 		}
-		// ui.RenderPrayerTime((*dayPrayer).Prayers)
-		//
-		// if isToday {
-		// 	previousPrayer, nextPrayer := domain.GetNextAndPreviousPrayerTimes(*dayPrayer)
-		// 	if previousPrayer == nil || nextPrayer == nil {
-		// 		return errors.New("Could not get previous or next prayer")
-		// 	}
-		//
-		// 	reminaingToNextPrayer := domain.GetTimeRemainingTo(nextPrayer.Time)
-		// 	if reminaingToNextPrayer == nil {
-		// 		return errors.New("Failed to get time remaining to next prayer")
-		// 	}
-		// 	ui.RenderTimeRemaining(*nextPrayer, *reminaingToNextPrayer)
-		//
-		// 	timeProgressPercent := domain.TimeProgressPercent(previousPrayer.Time, nextPrayer.Time)
-		// 	ui.RenderTimeProgress(*previousPrayer, *nextPrayer, timeProgressPercent)
-		// }
-
 		return nil
 	},
 }
