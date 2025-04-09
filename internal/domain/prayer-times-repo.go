@@ -1,22 +1,38 @@
 package domain
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"time"
 
+	"github.com/mabd-dev/prayer-times-cli/internal/data/storage"
 	"github.com/mabd-dev/prayer-times-cli/internal/models"
 )
+
+func SameDay(t time.Time, otherT time.Time) bool {
+	return t.Year() == otherT.Year() && t.Month() == otherT.Month() && t.Day() == otherT.Day()
+}
 
 type PrayerTimesRepo interface {
 	GetDailyPrayerSchedule(date time.Time) (DailyPrayerSchedule, error)
 	GetActivePrayerTracking(date time.Time) (ActivePrayerTracking, error)
 }
 
-type PrayerTimesRepoImpl struct{}
+type PrayerTimesRepoImpl struct {
+	storage storage.Storage
+}
+
+func CreatePrayerTimesRepo(s storage.Storage) PrayerTimesRepo {
+	return &PrayerTimesRepoImpl{
+		storage: s,
+	}
+}
 
 func (r *PrayerTimesRepoImpl) GetDailyPrayerSchedule(date time.Time) (DailyPrayerSchedule, error) {
-	dayPrayers := getDayPrayerTimeFor(date)
+	dayPrayers := r.getDayPrayerTimeFor(date)
 	if dayPrayers == nil {
 		return DailyPrayerSchedule{}, errors.New("Failed to get day prayer")
 	}
@@ -28,12 +44,12 @@ func (r *PrayerTimesRepoImpl) GetDailyPrayerSchedule(date time.Time) (DailyPraye
 }
 
 func (r *PrayerTimesRepoImpl) GetActivePrayerTracking(date time.Time) (ActivePrayerTracking, error) {
-	dayPrayers := getDayPrayerTimeFor(date)
+	dayPrayers := r.getDayPrayerTimeFor(date)
 	if dayPrayers == nil {
 		return ActivePrayerTracking{}, errors.New("Failed to get day prayer")
 	}
 
-	previousPrayer, nextPrayer := getNextAndPreviousPrayerTimes(*dayPrayers)
+	previousPrayer, nextPrayer := r.getNextAndPreviousPrayerTimes(*dayPrayers)
 	if previousPrayer == nil || nextPrayer == nil {
 		return ActivePrayerTracking{}, errors.New("Could not get previous or next prayer")
 	}
@@ -57,15 +73,23 @@ func (r *PrayerTimesRepoImpl) GetActivePrayerTracking(date time.Time) (ActivePra
 	}, nil
 }
 
+func (r *PrayerTimesRepoImpl) loadFromLocal() *models.PrayerTimesResponse {
+	var data models.PrayerTimesResponse
+	err := (*r).storage.Load(&data)
+	if err != nil {
+		return nil
+	}
+	return &data
+}
+
 // getDayPrayerTimeFor get caches data locally or fetch new data from remote then save locally.
 // Then search data for specific @year @month and @day. If found return prayer times
-func getDayPrayerTimeFor(time time.Time) *DayPrayers {
+func (r *PrayerTimesRepoImpl) getDayPrayerTimeFor(time time.Time) *DayPrayers {
 	dateStr := formatDate(time)
-	localYearFilename := fmt.Sprintf("%v.json", time.Year())
 
-	data := loadFromLocal(localYearFilename)
+	data := r.loadFromLocal()
 	if data == nil {
-		res, err := fetchAndSavePrayerTimes(time.Year(), localYearFilename)
+		res, err := r.fetchAndSavePrayerTimes(time.Year())
 		if err != nil {
 			fmt.Println("Failed to fetch data from internet")
 			return nil
@@ -84,17 +108,17 @@ func getDayPrayerTimeFor(time time.Time) *DayPrayers {
 //
 // @returns
 //   - (previous prayer, next prayer)
-func getNextAndPreviousPrayerTimes(dayPrayers DayPrayers) (*Prayer, *Prayer) {
+func (r *PrayerTimesRepoImpl) getNextAndPreviousPrayerTimes(dayPrayers DayPrayers) (*Prayer, *Prayer) {
 	day := time.Now()
 
 	yesterdayDate := day.Add(-24 * time.Hour)
-	yesterdayPrayers := getDayPrayerTimeFor(yesterdayDate)
+	yesterdayPrayers := r.getDayPrayerTimeFor(yesterdayDate)
 	if yesterdayPrayers == nil {
 		return nil, nil //errors.New("Failed to get yesterday's prayers")
 	}
 
 	tomorrowDate := day.Add(24 * time.Hour)
-	tomorrowPrayers := getDayPrayerTimeFor(tomorrowDate)
+	tomorrowPrayers := r.getDayPrayerTimeFor(tomorrowDate)
 	if tomorrowPrayers == nil {
 		return nil, nil //errors.New("Failed to get tomorrow's prayers")
 	}
@@ -120,8 +144,43 @@ func getNextAndPreviousPrayerTimes(dayPrayers DayPrayers) (*Prayer, *Prayer) {
 	return &combinedPrayerTimes[nextPrayerIndex-1], &combinedPrayerTimes[nextPrayerIndex]
 }
 
-func SameDay(t time.Time, otherT time.Time) bool {
-	return t.Year() == otherT.Year() && t.Month() == otherT.Month() && t.Day() == otherT.Day()
+func (r *PrayerTimesRepoImpl) fetchAndSavePrayerTimes(year int) (*models.PrayerTimesResponse, error) {
+	fmt.Println("Fetching data from internet...")
+	fmt.Printf("year=%v\n", year)
+	res, err := fetchPrayingTimes(year)
+	if err != nil {
+		return nil, err
+	}
+	(*r).storage.Save(*res)
+	return res, nil
+}
+
+// TODO: move this to data/api module
+func fetchPrayingTimes(year int) (*models.PrayerTimesResponse, error) {
+	baseUrl := fmt.Sprintf("https://ibad-al-rahman.github.io/prayer-times/v1/year/days/%v.json", year)
+
+	resp, err := http.Get(baseUrl)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("response not ok!!%v\n", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var response models.PrayerTimesResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response, nil
 }
 
 // getTimeRemainingTo

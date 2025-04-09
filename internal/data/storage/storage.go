@@ -1,4 +1,4 @@
-package domain
+package storage
 
 import (
 	"encoding/json"
@@ -8,6 +8,16 @@ import (
 	"github.com/mabd-dev/prayer-times-cli/internal/models"
 )
 
+// TODO: Add unit tests to these functions
+type Storage interface {
+	Save(data models.PrayerTimesResponse) error
+	Load(data *models.PrayerTimesResponse) error
+}
+
+type FileStorage struct {
+	FileName string
+}
+
 // Save given data to file
 //
 // @Returns:
@@ -15,8 +25,8 @@ import (
 //	error if
 //	    - Getting file path failed
 //	    - marchal data failed
-func Save(filename string, data models.PrayerTimesResponse) error {
-	filePath, err := getOrCreateFilePath(filename)
+func (s *FileStorage) Save(data models.PrayerTimesResponse) error {
+	filePath, err := getOrCreateFilePath((*s).FileName)
 	if err != nil {
 		return err
 	}
@@ -34,8 +44,8 @@ func Save(filename string, data models.PrayerTimesResponse) error {
 // @Returns:
 //
 //	error if was not able to get/create file path or read the file
-func Load(filename string, data *models.PrayerTimesResponse) error {
-	filePath, err := getOrCreateFilePath(filename)
+func (s *FileStorage) Load(data *models.PrayerTimesResponse) error {
+	filePath, err := getOrCreateFilePath((*s).FileName)
 	if err != nil {
 		return err
 	}

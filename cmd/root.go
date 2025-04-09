@@ -4,9 +4,11 @@ Copyright © 2025 MABD-dev <mabd.universe@gmail.com>
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"time"
 
+	"github.com/mabd-dev/prayer-times-cli/internal/data/storage"
 	"github.com/mabd-dev/prayer-times-cli/internal/domain"
 	"github.com/mabd-dev/prayer-times-cli/internal/ui"
 	"github.com/spf13/cobra"
@@ -33,7 +35,11 @@ var rootCmd = &cobra.Command{
 		now := time.Now()
 		requestedDate := time.Date(year, time.Month(month), day, now.Hour(), now.Minute(), 0, 0, now.Location())
 
-		var repo domain.PrayerTimesRepo = &domain.PrayerTimesRepoImpl{}
+		localYearFilename := fmt.Sprintf("%v.json", requestedDate.Year())
+		var storage storage.Storage = &storage.FileStorage{
+			FileName: localYearFilename,
+		}
+		var repo domain.PrayerTimesRepo = domain.CreatePrayerTimesRepo(storage)
 
 		isToday := domain.SameDay(now, requestedDate)
 		if isToday {
