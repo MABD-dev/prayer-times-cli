@@ -33,16 +33,18 @@ var rootCmd = &cobra.Command{
 		now := time.Now()
 		requestedDate := time.Date(year, time.Month(month), day, now.Hour(), now.Minute(), 0, 0, now.Location())
 
+		var repo domain.PrayerTimesRepo = &domain.PrayerTimesRepoImpl{}
+
 		isToday := domain.SameDay(now, requestedDate)
 		if isToday {
-			activePrayerTracking, err := domain.GetActivePrayerTracking(requestedDate)
+			activePrayerTracking, err := repo.GetActivePrayerTracking(requestedDate)
 			if err != nil {
 				return err
 			}
 			ui.RenderActivePrayerTracking(activePrayerTracking)
 
 		} else {
-			dailyPrayerSchedule, err := domain.GetDailyPrayerSchedule(requestedDate)
+			dailyPrayerSchedule, err := repo.GetDailyPrayerSchedule(requestedDate)
 			if err != nil {
 				return err
 			}

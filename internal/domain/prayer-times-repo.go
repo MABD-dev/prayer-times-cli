@@ -4,10 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/mabd-dev/prayer-times-cli/internal/models"
 )
 
-func GetDailyPrayerSchedule(date time.Time) (DailyPrayerSchedule, error) {
-	dayPrayers := GetDayPrayerTimeFor(date)
+type PrayerTimesRepo interface {
+	GetDailyPrayerSchedule(date time.Time) (DailyPrayerSchedule, error)
+	GetActivePrayerTracking(date time.Time) (ActivePrayerTracking, error)
+}
+
+type PrayerTimesRepoImpl struct{}
+
+func (r *PrayerTimesRepoImpl) GetDailyPrayerSchedule(date time.Time) (DailyPrayerSchedule, error) {
+	dayPrayers := getDayPrayerTimeFor(date)
 	if dayPrayers == nil {
 		return DailyPrayerSchedule{}, errors.New("Failed to get day prayer")
 	}
@@ -18,38 +27,39 @@ func GetDailyPrayerSchedule(date time.Time) (DailyPrayerSchedule, error) {
 	}, nil
 }
 
-func GetActivePrayerTracking(date time.Time) (ActivePrayerTracking, error) {
-	dayPrayers := GetDayPrayerTimeFor(date)
+func (r *PrayerTimesRepoImpl) GetActivePrayerTracking(date time.Time) (ActivePrayerTracking, error) {
+	dayPrayers := getDayPrayerTimeFor(date)
 	if dayPrayers == nil {
 		return ActivePrayerTracking{}, errors.New("Failed to get day prayer")
 	}
 
-	previousPrayer, nextPrayer := GetNextAndPreviousPrayerTimes(*dayPrayers)
+	previousPrayer, nextPrayer := getNextAndPreviousPrayerTimes(*dayPrayers)
 	if previousPrayer == nil || nextPrayer == nil {
 		return ActivePrayerTracking{}, errors.New("Could not get previous or next prayer")
 	}
 
-	reminaingToNextPrayer := GetTimeRemainingTo(nextPrayer.Time)
+	reminaingToNextPrayer := getTimeRemainingTo(nextPrayer.Time)
 	if reminaingToNextPrayer == nil {
 		return ActivePrayerTracking{}, errors.New("Failed to get time remaining to next prayer")
 	}
 
-	timeProgressPercent := TimeProgressPercent(previousPrayer.Time, nextPrayer.Time)
+	timeProgressPercent := timeProgressPercent(previousPrayer.Time, nextPrayer.Time)
 
 	return ActivePrayerTracking{
 		DailyPrayerSchedule: DailyPrayerSchedule{
 			Date:    dayPrayers.Date,
 			Prayers: dayPrayers.Prayers,
 		},
-		NextPrayer:    nextPrayer.Name,
-		TimeRemaining: *reminaingToNextPrayer,
-		Progress:      timeProgressPercent,
+		PreviousPrayer: previousPrayer.Name,
+		NextPrayer:     nextPrayer.Name,
+		TimeRemaining:  *reminaingToNextPrayer,
+		Progress:       timeProgressPercent,
 	}, nil
 }
 
-// GetDayPrayerTimeFor get caches data locally or fetch new data from remote then save locally.
+// getDayPrayerTimeFor get caches data locally or fetch new data from remote then save locally.
 // Then search data for specific @year @month and @day. If found return prayer times
-func GetDayPrayerTimeFor(time time.Time) *DayPrayers {
+func getDayPrayerTimeFor(time time.Time) *DayPrayers {
 	dateStr := formatDate(time)
 	localYearFilename := fmt.Sprintf("%v.json", time.Year())
 
@@ -74,17 +84,17 @@ func GetDayPrayerTimeFor(time time.Time) *DayPrayers {
 //
 // @returns
 //   - (previous prayer, next prayer)
-func GetNextAndPreviousPrayerTimes(dayPrayers DayPrayers) (*Prayer, *Prayer) {
+func getNextAndPreviousPrayerTimes(dayPrayers DayPrayers) (*Prayer, *Prayer) {
 	day := time.Now()
 
 	yesterdayDate := day.Add(-24 * time.Hour)
-	yesterdayPrayers := GetDayPrayerTimeFor(yesterdayDate)
+	yesterdayPrayers := getDayPrayerTimeFor(yesterdayDate)
 	if yesterdayPrayers == nil {
 		return nil, nil //errors.New("Failed to get yesterday's prayers")
 	}
 
 	tomorrowDate := day.Add(24 * time.Hour)
-	tomorrowPrayers := GetDayPrayerTimeFor(tomorrowDate)
+	tomorrowPrayers := getDayPrayerTimeFor(tomorrowDate)
 	if tomorrowPrayers == nil {
 		return nil, nil //errors.New("Failed to get tomorrow's prayers")
 	}
@@ -110,12 +120,16 @@ func GetNextAndPreviousPrayerTimes(dayPrayers DayPrayers) (*Prayer, *Prayer) {
 	return &combinedPrayerTimes[nextPrayerIndex-1], &combinedPrayerTimes[nextPrayerIndex]
 }
 
-// GetTimeRemainingTo
+func SameDay(t time.Time, otherT time.Time) bool {
+	return t.Year() == otherT.Year() && t.Month() == otherT.Month() && t.Day() == otherT.Day()
+}
+
+// getTimeRemainingTo
 //
 // @Returns
 //   - hours remaining
 //   - minutes remaining
-func GetTimeRemainingTo(nextPrayerTime time.Time) *time.Duration {
+func getTimeRemainingTo(nextPrayerTime time.Time) *time.Duration {
 	now := time.Now()
 	if now.After(nextPrayerTime) {
 		return nil
@@ -126,7 +140,7 @@ func GetTimeRemainingTo(nextPrayerTime time.Time) *time.Duration {
 
 }
 
-func TimeProgressPercent(
+func timeProgressPercent(
 	previousPrayerTime time.Time,
 	nextPrayerTime time.Time,
 ) float64 {
@@ -146,4 +160,32 @@ func TimeProgressPercent(
 		return 100.0
 	}
 	return percent
+}
+
+func formatDate(time time.Time) string {
+	day := time.Day()
+	month := int(time.Month())
+	year := time.Year()
+
+	dayStr := fmt.Sprint(day)
+	if day <= 9 {
+		dayStr = fmt.Sprintf("0%v", day)
+	}
+	monthStr := fmt.Sprint(month)
+	if month < 9 {
+		monthStr = fmt.Sprintf("0%v", month)
+	}
+	return fmt.Sprintf("%v/%v/%v", dayStr, monthStr, year)
+}
+
+func getPrayerTimes(
+	data models.PrayerTimesResponse,
+	dateStr string,
+) *models.DailyPrayersDto {
+	for _, dayPrayer := range data.Year {
+		if dayPrayer.Gregorian == dateStr {
+			return &dayPrayer
+		}
+	}
+	return nil
 }

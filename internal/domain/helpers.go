@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/mabd-dev/prayer-times-cli/internal/models"
 )
@@ -55,36 +54,4 @@ func fetchPrayingTimes(year int) (*models.PrayerTimesResponse, error) {
 	}
 
 	return &response, nil
-}
-
-func formatDate(time time.Time) string {
-	day := time.Day()
-	month := int(time.Month())
-	year := time.Year()
-
-	dayStr := fmt.Sprint(day)
-	if day <= 9 {
-		dayStr = fmt.Sprintf("0%v", day)
-	}
-	monthStr := fmt.Sprint(month)
-	if month < 9 {
-		monthStr = fmt.Sprintf("0%v", month)
-	}
-	return fmt.Sprintf("%v/%v/%v", dayStr, monthStr, year)
-}
-
-func getPrayerTimes(
-	data models.PrayerTimesResponse,
-	dateStr string,
-) *models.DailyPrayersDto {
-	for _, dayPrayer := range data.Year {
-		if dayPrayer.Gregorian == dateStr {
-			return &dayPrayer
-		}
-	}
-	return nil
-}
-
-func SameDay(t time.Time, otherT time.Time) bool {
-	return t.Year() == otherT.Year() && t.Month() == otherT.Month() && t.Day() == otherT.Day()
 }
