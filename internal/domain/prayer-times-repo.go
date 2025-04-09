@@ -1,9 +1,51 @@
 package domain
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
+
+func GetDailyPrayerSchedule(date time.Time) (DailyPrayerSchedule, error) {
+	dayPrayers := GetDayPrayerTimeFor(date)
+	if dayPrayers == nil {
+		return DailyPrayerSchedule{}, errors.New("Failed to get day prayer")
+	}
+
+	return DailyPrayerSchedule{
+		Date:    dayPrayers.Date,
+		Prayers: dayPrayers.Prayers,
+	}, nil
+}
+
+func GetActivePrayerTracking(date time.Time) (ActivePrayerTracking, error) {
+	dayPrayers := GetDayPrayerTimeFor(date)
+	if dayPrayers == nil {
+		return ActivePrayerTracking{}, errors.New("Failed to get day prayer")
+	}
+
+	previousPrayer, nextPrayer := GetNextAndPreviousPrayerTimes(*dayPrayers)
+	if previousPrayer == nil || nextPrayer == nil {
+		return ActivePrayerTracking{}, errors.New("Could not get previous or next prayer")
+	}
+
+	reminaingToNextPrayer := GetTimeRemainingTo(nextPrayer.Time)
+	if reminaingToNextPrayer == nil {
+		return ActivePrayerTracking{}, errors.New("Failed to get time remaining to next prayer")
+	}
+
+	timeProgressPercent := TimeProgressPercent(previousPrayer.Time, nextPrayer.Time)
+
+	return ActivePrayerTracking{
+		DailyPrayerSchedule: DailyPrayerSchedule{
+			Date:    dayPrayers.Date,
+			Prayers: dayPrayers.Prayers,
+		},
+		NextPrayer:    nextPrayer.Name,
+		TimeRemaining: *reminaingToNextPrayer,
+		Progress:      timeProgressPercent,
+	}, nil
+}
 
 // GetDayPrayerTimeFor get caches data locally or fetch new data from remote then save locally.
 // Then search data for specific @year @month and @day. If found return prayer times

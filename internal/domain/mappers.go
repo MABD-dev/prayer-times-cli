@@ -7,7 +7,7 @@ import (
 	"github.com/mabd-dev/prayer-times-cli/internal/models"
 )
 
-func mapToDayPrayer(prayerTimes models.DayPrayers) *DayPrayers {
+func mapToDayPrayer(prayerTimes models.DailyPrayersDto) *DayPrayers {
 	day, err := time.ParseInLocation("02/01/2006", prayerTimes.Gregorian, time.Local)
 	if err != nil {
 		return nil
@@ -26,7 +26,7 @@ func mapToDayPrayer(prayerTimes models.DayPrayers) *DayPrayers {
 }
 
 // getSortedPrayerTimes takes @day
-func getSortedPrayerTimes(day time.Time, prayerTimes models.Prayers) ([]Prayer, error) {
+func getSortedPrayerTimes(day time.Time, prayerTimes models.PrayerTimesDto) ([]Prayer, error) {
 	result := []Prayer{}
 
 	sortedPrayerNames := models.SortedPrayerNames

@@ -32,7 +32,6 @@ func fetchAndSavePrayerTimes(year int, filename string) (*models.PrayerTimesResp
 
 func fetchPrayingTimes(year int) (*models.PrayerTimesResponse, error) {
 	baseUrl := fmt.Sprintf("https://ibad-al-rahman.github.io/prayer-times/v1/year/days/%v.json", year)
-	fmt.Println(baseUrl)
 
 	resp, err := http.Get(baseUrl)
 	if err != nil {
@@ -77,7 +76,7 @@ func formatDate(time time.Time) string {
 func getPrayerTimes(
 	data models.PrayerTimesResponse,
 	dateStr string,
-) *models.DayPrayers {
+) *models.DailyPrayersDto {
 	for _, dayPrayer := range data.Year {
 		if dayPrayer.Gregorian == dateStr {
 			return &dayPrayer

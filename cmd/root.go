@@ -4,7 +4,6 @@ Copyright © 2025 MABD-dev <mabd.universe@gmail.com>
 package cmd
 
 import (
-	"errors"
 	"os"
 	"time"
 
@@ -34,33 +33,21 @@ var rootCmd = &cobra.Command{
 		now := time.Now()
 		requestedDate := time.Date(year, time.Month(month), day, now.Hour(), now.Minute(), 0, 0, now.Location())
 
-		dayPrayer := domain.GetDayPrayerTimeFor(requestedDate)
-		if dayPrayer == nil {
-			return errors.New("Failed to get day prayers!")
-		}
-
 		isToday := domain.SameDay(now, requestedDate)
 		if isToday {
-			ui.RenderDate(dayPrayer.Date)
-		}
-		ui.RenderPrayerTime((*dayPrayer).Prayers)
-
-		if isToday {
-			previousPrayer, nextPrayer := domain.GetNextAndPreviousPrayerTimes(*dayPrayer)
-			if previousPrayer == nil || nextPrayer == nil {
-				return errors.New("Could not get previous or next prayer")
+			activePrayerTracking, err := domain.GetActivePrayerTracking(requestedDate)
+			if err != nil {
+				return err
 			}
+			ui.RenderActivePrayerTracking(activePrayerTracking)
 
-			reminaingToNextPrayer := domain.GetTimeRemainingTo(nextPrayer.Time)
-			if reminaingToNextPrayer == nil {
-				return errors.New("Failed to get time remaining to next prayer")
+		} else {
+			dailyPrayerSchedule, err := domain.GetDailyPrayerSchedule(requestedDate)
+			if err != nil {
+				return err
 			}
-			ui.RenderTimeRemaining(*nextPrayer, *reminaingToNextPrayer)
-
-			timeProgressPercent := domain.TimeProgressPercent(previousPrayer.Time, nextPrayer.Time)
-			ui.RenderTimeProgress(*previousPrayer, *nextPrayer, timeProgressPercent)
+			ui.RenderDailyPrayerSchedule(dailyPrayerSchedule)
 		}
-
 		return nil
 	},
 }

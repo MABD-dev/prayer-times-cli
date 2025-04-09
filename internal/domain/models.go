@@ -12,3 +12,16 @@ type DayPrayers struct {
 	Date    time.Time
 	Prayers []Prayer
 }
+
+type DailyPrayerSchedule struct {
+	Date    time.Time
+	Prayers []Prayer
+}
+
+type ActivePrayerTracking struct {
+	DailyPrayerSchedule
+	PreviousPrayer string
+	NextPrayer     string
+	TimeRemaining  time.Duration
+	Progress       float64
+}
