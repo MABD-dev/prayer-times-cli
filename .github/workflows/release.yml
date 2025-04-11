@@ -29,7 +29,10 @@ jobs:
 
       - name: Trigger pkg.go.dev indexing
         run: |
-          curl -X GET "https://proxy.golang.org/github.com/${{ github.repository | toLower }}/@v/${{ github.ref_name }}.info"
+          REPO="${{ github.repository }}"
+          REPO_LOWER=$(echo "$REPO" | tr '[:upper:]' '[:lower:]')
+          curl -X GET "https://proxy.golang.org/github.com/$REPO_LOWER/@v/${{ github.ref_name }}.info"
+
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
