@@ -7,6 +7,127 @@ import (
 	"github.com/mabd-dev/prayer-times-cli/internal/models"
 )
 
+func TestMapToDayPrayer(t *testing.T) {
+	day := time.Date(2025, 5, 28, 1, 0, 0, 0, time.Now().Location())
+	prayers := models.PrayerTimesDto{
+		Fajr:    "05:00 am",
+		Dhuhr:   "11:00 am",
+		Asr:     "01:00 pm",
+		Maghrib: "05:00 pm",
+		Isha:    "07:00 pm",
+	}
+	dayPrayers := DayPrayers{
+		ID:   1,
+		Date: day,
+		Prayers: []Prayer{
+			{
+				Name: "Fajr",
+				Time: time.Date(day.Year(), day.Month(), day.Day(), 5, 0, 0, day.Nanosecond(), day.Location()),
+			},
+			{
+				Name: "Dhuhr",
+				Time: time.Date(day.Year(), day.Month(), day.Day(), 11, 0, 0, 0, day.Location()),
+			},
+			{
+				Name: "Asr",
+				Time: time.Date(day.Year(), day.Month(), day.Day(), 13, 0, 0, 0, day.Location()),
+			},
+			{
+				Name: "Maghrib",
+				Time: time.Date(day.Year(), day.Month(), day.Day(), 17, 0, 0, 0, day.Location()),
+			},
+			{
+				Name: "Isha",
+				Time: time.Date(day.Year(), day.Month(), day.Day(), 19, 0, 0, 0, day.Location()),
+			},
+		},
+	}
+
+	tests := []struct {
+		name               string
+		dailyPrayerDto     models.DailyPrayersDto
+		expectedDayPrayers *DayPrayers
+	}{
+		{
+			name: "Invalid gregorian date",
+			dailyPrayerDto: models.DailyPrayersDto{
+				ID:        1,
+				Gregorian: "",
+				Prayers:   prayers,
+			},
+			expectedDayPrayers: nil,
+		},
+		{
+			name: "Invalid gregorian date format",
+			dailyPrayerDto: models.DailyPrayersDto{
+				ID:        1,
+				Gregorian: "2025/05/28",
+				Prayers:   prayers,
+			},
+			expectedDayPrayers: nil,
+		},
+		{
+			name: "Invalid gregorian date format 2",
+			dailyPrayerDto: models.DailyPrayersDto{
+				ID:        1,
+				Gregorian: "2025/28/05",
+				Prayers:   prayers,
+			},
+			expectedDayPrayers: nil,
+		},
+		{
+			name: "Valid result",
+			dailyPrayerDto: models.DailyPrayersDto{
+				ID:        1,
+				Gregorian: "28/05/2025",
+				Prayers:   prayers,
+			},
+			expectedDayPrayers: &dayPrayers,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := mapToDayPrayer(tt.dailyPrayerDto)
+
+			if tt.expectedDayPrayers == nil && result != nil {
+				t.Errorf("Expected dayPrayers to be nil but it was not. result=%v", result)
+			}
+
+			if result == nil && tt.expectedDayPrayers == nil {
+				return
+			}
+
+			if result.ID != tt.expectedDayPrayers.ID {
+				t.Errorf("Expected ID=%v, got=%v", tt.expectedDayPrayers.ID, result.ID)
+			}
+
+			if !SameDay(result.Date, tt.expectedDayPrayers.Date) {
+				t.Errorf("Expected Date=%v, got=%v", tt.expectedDayPrayers.Date, result.Date)
+			}
+
+			for i := range 5 {
+				if result.Prayers[i].Time.Year() != tt.expectedDayPrayers.Prayers[i].Time.Year() ||
+					result.Prayers[i].Time.Month() != tt.expectedDayPrayers.Prayers[i].Time.Month() ||
+					result.Prayers[i].Time.Day() != tt.expectedDayPrayers.Prayers[i].Time.Day() ||
+					result.Prayers[i].Time.Hour() != tt.expectedDayPrayers.Prayers[i].Time.Hour() ||
+					result.Prayers[i].Time.Minute() != tt.expectedDayPrayers.Prayers[i].Time.Minute() ||
+					result.Prayers[i].Time.Second() != tt.expectedDayPrayers.Prayers[i].Time.Second() {
+					t.Errorf("Time components mismatch\nExpected: Y:%d M:%d D:%d H:%d M:%d S:%d\nGot:      Y:%d M:%d D:%d H:%d M:%d S:%d",
+						tt.expectedDayPrayers.Prayers[i].Time.Year(), tt.expectedDayPrayers.Prayers[i].Time.Month(), tt.expectedDayPrayers.Prayers[i].Time.Day(),
+						tt.expectedDayPrayers.Prayers[i].Time.Hour(), tt.expectedDayPrayers.Prayers[i].Time.Minute(), tt.expectedDayPrayers.Prayers[i].Time.Second(),
+						result.Prayers[i].Time.Year(), result.Prayers[i].Time.Month(), result.Prayers[i].Time.Day(), result.Prayers[i].Time.Hour(), result.Prayers[i].Time.Minute(), result.Prayers[i].Time.Second())
+				}
+
+				if result.Prayers[i].Time.Location().String() != tt.expectedDayPrayers.Prayers[i].Time.Location().String() {
+					t.Errorf("Location mismatch. Expected %v but got %v", tt.expectedDayPrayers.Prayers[i].Time.Location(), result.Prayers[i].Time.Location())
+				}
+			}
+
+		})
+	}
+}
+
 func TestGetSortedPrayerTimes(t *testing.T) {
 	day := time.Date(2025, 11, 15, 10, 0, 0, 0, time.UTC)
 
