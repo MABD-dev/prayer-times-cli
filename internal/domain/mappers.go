@@ -57,6 +57,6 @@ func parseTime(
 	if err != nil {
 		return time.Time{}, err
 	}
-	time := time.Date(requestedTime.Year(), requestedTime.Month(), requestedTime.Day(), t.Hour(), t.Minute(), 59, 0, requestedTime.Location())
+	time := time.Date(requestedTime.Year(), requestedTime.Month(), requestedTime.Day(), t.Hour(), t.Minute(), 0, 0, requestedTime.Location())
 	return time, nil
 }
