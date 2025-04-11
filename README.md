@@ -1,4 +1,6 @@
 # Prayer Times Cli
+[![Go Reference](https://pkg.go.dev/badge/github.com/mabd-dev/prayer-times-cli#section-documentation.svg)](https://pkg.go.dev/github.com/mabd-dev/prayer-times-cli#section-documentation)
+
 
 Cli tool to show today's prayer times
 
