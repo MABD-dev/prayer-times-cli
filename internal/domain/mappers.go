@@ -8,7 +8,7 @@ import (
 )
 
 func mapToDayPrayer(prayerTimes models.DailyPrayersDto) *DayPrayers {
-	day, err := time.ParseInLocation("02/01/2006", prayerTimes.Gregorian, time.Local)
+	day, err := time.ParseInLocation("02/01/2006", strings.TrimSpace(prayerTimes.Gregorian), time.Local)
 	if err != nil {
 		return nil
 	}
@@ -57,6 +57,6 @@ func parseTime(
 	if err != nil {
 		return time.Time{}, err
 	}
-	time := time.Date(requestedTime.Year(), requestedTime.Month(), requestedTime.Day(), t.Hour(), t.Minute(), 59, 0, requestedTime.Location())
+	time := time.Date(requestedTime.Year(), requestedTime.Month(), requestedTime.Day(), t.Hour(), t.Minute(), 0, 0, requestedTime.Location())
 	return time, nil
 }
