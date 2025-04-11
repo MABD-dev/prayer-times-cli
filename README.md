@@ -2,7 +2,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/mabd-dev/prayer-times-cli#section-documentation.svg)](https://pkg.go.dev/github.com/mabd-dev/prayer-times-cli#section-documentation)
 
 
-Cli tool to show today's prayer times
+Cli tool to show prayer times of any day you want
 
 ![img](docs/prayers-command-preview.png)
 
@@ -12,32 +12,16 @@ Features
 
 
 ## Installation
-1.  **Clone the repository:**
+1.  **Install go package:**
     ```bash
-    git clone https://github.com/MABD-dev/prayer-times-cli
-    cd prayer-times-cli
+    go install github.com/mabd-dev/prayer-times-cli
     ```
-2.  **Ensure Go is installed:**
-    * Make sure Go `1.24.1` or later is installed on your machine.
-    * You can check using:
-        ```bash
-        go version
-        ``` 
-3.  **Build the project:**
-    ```bash
-    go build
-    ```
-    This will generate the `prayer-times-cli` executable.
+2. **Rename cli command (optional)**
 
-    > Optional: I like to shorten the executabel file name to `prayers`. you can do that by
-    ```sh
-    mv prayer-times-cli prayers
-    ```
-
-4.  **Add to your PATH (Linux/macOS):**
-    * Move the `prayer-times-cli` executable to a directory in your `PATH` (e.g., `~/bin` or `/usr/local/bin`).
-    * Alternatively, add the directory containing the executable to your `PATH` environment variable.
-
+   go to `~/go/bin` and rename prayer-times-cli to prayers like this:
+   ```sh
+   sudo mv prayer-times-cli prayers
+   ```
 
 ## Usage
 NOTE: use `prayer-times-cli` if you did not rename it to `prayers`
